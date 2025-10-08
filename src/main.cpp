@@ -8,6 +8,8 @@
 
 
 
+
+
   // Définition des pins
   #define TFT_CS   PB6  // D10
   #define TFT_DC   PC7  // D9
@@ -20,20 +22,29 @@
    int snakeheadx = 160;
    int snakeheady = 120;
    int L = 10;
-   int snakebodyx1 = snakeheadx-L;
-   int snakebodyx2 = snakeheadx-2*L;
-   int snakebodyx3 = snakeheadx-3*L;
-   int snakebodyy1 = snakeheady;
-   int snakebodyy2 = snakeheady;
-   int snakebodyy3 = snakeheady;
-   int deplacement = (rand() % 4)+1;
-   
+   const int MAX_TAIL = 100; // Longueur max du corps
+   int snakeBodyX[MAX_TAIL];
+   int snakeBodyY[MAX_TAIL];
+   int tailLength = 3; // Longueur actuelle du corps (initialement 3)
+
+
+
+bool collision() {
+   for (int i =1; i < tailLength; i++){
+      if (snakeheadx == snakeBodyX[i] && snakeheady == snakeBodyY[i]){
+         return true;
+      }
+   }
+   return false;
+}
 
 void setup()
 {
+
   Serial.begin(115200);
   Serial.println("Boot");
-
+  int longueur= 320;
+  int largeur= 240;
 
   // Initialisation du port série pour debug
   Serial.begin(115200);
@@ -61,86 +72,94 @@ void setup()
  
   // Texte blanc
   tft.fillScreen(ILI9341_BLACK);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setTextSize(3);
-  tft.setCursor(30, 100);
-  tft.println("Il marche !");
+  snakeBodyX[0] = snakeheadx - L;
+  snakeBodyX[1] = snakeheadx - 2*L;
+  snakeBodyX[2] = snakeheadx - 3*L;
 
-   tft.fillRect(snakeheadx, snakeheady, L,L, ILI9341_GREEN);
-  tft.fillRect(snakebodyx1,snakebodyy1,L,L,ILI9341_YELLOW);
-  tft.fillRect(snakebodyx2,snakebodyy2,L,L,ILI9341_BLUE);
-  tft.fillRect(snakebodyx3,snakebodyy3,L,L,ILI9341_RED);
+  snakeBodyY[0] = snakeheady;
+  snakeBodyY[1] = snakeheady;
+  snakeBodyY[2] = snakeheady;
+
+  tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_GREEN); // Tête
+
+  for (int i = 0; i < tailLength; i++) {
+    tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_YELLOW); // Corps
+  }
+
  
-  Serial.println("Test terminé !");
+
+
+  
 
 }
 
+
 void loop()
 {
-  digitalToggle(LED_VERTE);
-  
+  // Effacer ancien corps
+  for (int i = 0; i < tailLength; i++) {
+    tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_BLACK);
+  }
+  tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_BLACK); // Tête
 
-   // Animation simple : cercle qui bouge
-  // static int x = 160;
-  // static int y = 120;
+  // Calcul direction aléatoire (1: droite, 2: gauche, 3: bas, 4: haut)
+  int deplacement = (rand() % 4) + 1;
 
- 
-  // Effacer l'ancien cercle
-  tft.fillRect(snakeheadx, snakeheady,L,L, ILI9341_BLACK);
-  tft.fillRect(snakebodyx1,snakebodyy1,L,L,ILI9341_BLACK);
-  tft.fillRect(snakebodyx2,snakebodyy2,L,L,ILI9341_BLACK);
-  tft.fillRect(snakebodyx3,snakebodyy3,L,L,ILI9341_BLACK);
-  
-  snakebodyx3=snakebodyx2;
-  snakebodyx2=snakebodyx1;
-  snakebodyx1=snakeheadx;
-  snakebodyy3=snakebodyy2;
-  snakebodyy2=snakebodyy1;
-  snakebodyy1=snakeheady;
+  // Éviter de revenir sur le segment précédent
+  if (tailLength > 0) {
+    int dx = snakeheadx - snakeBodyX[0];
+    int dy = snakeheady - snakeBodyY[0];
 
- 
+    if (dx == L && deplacement == 2) deplacement = 1 + (rand() % 3); // va pas à gauche
+    if (dx == -L && deplacement == 1) deplacement = 2 + (rand() % 3); // va pas à droite
+    if (dy == L && deplacement == 4) deplacement = 1 + (rand() % 3); // va pas en haut
+    if (dy == -L && deplacement == 3) deplacement = 1 + (rand() % 3); // va pas en bas
+  }
 
- 
+  // Décaler les segments du corps
+  for (int i = tailLength - 1; i > 0; i--) {
+    snakeBodyX[i] = snakeBodyX[i - 1];
+    snakeBodyY[i] = snakeBodyY[i - 1];
+  }
+  // Le 1er segment prend la place de l'ancienne tête
+  if (tailLength > 0) {
+    snakeBodyX[0] = snakeheadx;
+    snakeBodyY[0] = snakeheady;
+  }
 
- if (deplacement==1){
-    tft.fillRect(snakebodyx3,snakebodyy3,L,L,ILI9341_YELLOW);
-    tft.fillRect(snakebodyx2,snakebodyy2,L,L,ILI9341_BLUE);
-    tft.fillRect(snakebodyx1,snakebodyy1,L,L,ILI9341_RED);
-    snakeheadx+=L;
-    tft.fillRect(snakeheadx, snakeheady,L,L, ILI9341_GREEN);
- }
- else if (deplacement==2)
- {
-    tft.fillRect(snakebodyx3,snakebodyy3,L,L,ILI9341_RED);
-    tft.fillRect(snakebodyx2,snakebodyy2,L,L,ILI9341_BLUE);
-    tft.fillRect(snakebodyx1,snakebodyy1,L,L,ILI9341_YELLOW);
-    snakeheadx-=L;
-    tft.fillRect(snakeheadx, snakeheady,L,L, ILI9341_GREEN);
- }
- else if (deplacement==3)
- {
-  tft.fillRect(snakebodyx3,snakebodyy3,L,L,ILI9341_RED);
-    tft.fillRect(snakebodyx2,snakebodyy2,L,L,ILI9341_BLUE);
-    tft.fillRect(snakebodyx1,snakebodyy1,L,L,ILI9341_YELLOW);
-    snakeheady+=L;
-    tft.fillRect(snakeheadx, snakeheady,L,L, ILI9341_GREEN);
- }
- else{
-    tft.fillRect(snakebodyx3,snakebodyy3,L,L,ILI9341_RED);
-    tft.fillRect(snakebodyx2,snakebodyy2,L,L,ILI9341_BLUE);
-    tft.fillRect(snakebodyx1,snakebodyy1,L,L,ILI9341_YELLOW);
-    snakeheady-=L;
-    tft.fillRect(snakeheadx, snakeheady,L,L, ILI9341_GREEN);
- }
- 
-  // Déplacer
-  //snakeheadx += dx;
-  //snakeheady += dy;
- 
-  // Rebondir sur les bords
-  //if (snakeheadx <= 5 || snakeheadx >= 315) dx = -dx;
-  //if (snakeheadx <= 5 || snakeheady >= 235) dy = -dy;
- 
-  // Dessiner le nouveau snake
+  // Mise à jour de la tête
+  if (deplacement == 1) snakeheadx += L;       // droite
+  else if (deplacement == 2) snakeheadx -= L;  // gauche
+  else if (deplacement == 3) snakeheady += L;  // bas
+  else if (deplacement == 4) snakeheady -= L;  // haut
+
+ if (collision()) {
+  tft.fillScreen(ILI9341_RED);
+  tft.setCursor(50, 120);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(3);
+  tft.print("GAME OVER");
+  while (true) {
+    
+  }
+
+  }
+
+  // Dessiner le nouveau corps (jaune)
+  for (int i = 0; i < tailLength; i++) {
+    tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_YELLOW);
+  }
+
+  // Dessiner la tête (verte)
+  tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_GREEN);
+
+  // Agrandir le serpent toutes les 10 secondes
+  static unsigned long lastGrow = 0;
+  if (millis() - lastGrow > 10000 && tailLength < MAX_TAIL) {
+    tailLength++;
+    lastGrow = millis();
+  }
+
   delay(500);
+
 }

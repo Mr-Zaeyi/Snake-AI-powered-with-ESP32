@@ -26,7 +26,16 @@
    int snakeBodyX[MAX_TAIL];
    int snakeBodyY[MAX_TAIL];
    int tailLength = 3; // Longueur actuelle du corps (initialement 3)
+   int longueur= 280;
+   int largeur= 200;
+   int pommex;
+   int pommey;
 
+ void genererPomme(){
+   int minX=10;
+   int maxX= longueur-10-L;
+   
+ }
 
 
 bool collision() {
@@ -37,14 +46,23 @@ bool collision() {
    }
    return false;
 }
+bool collisionAvecArene(int x, int y, int longueur, int largeur, int L) {
+    // x et y sont la position de la tête (coin haut-gauche)
+    // L est la taille du carré (taille d'un segment)
+    
+    // Vérifie si la tête est en dehors du rectangle noir (terrain de jeu)
+    if (x < 10 || y < 10) return true;                      // Trop à gauche ou en haut
+    if (x + L > (longueur - 10)) return true;              // Trop à droite
+    if (y + L > (largeur - 10)) return true;               // Trop en bas
+    
+    return false; // Pas de collision
+}
+
 
 void setup()
 {
 
-  Serial.begin(115200);
-  Serial.println("Boot");
-  int longueur= 320;
-  int largeur= 240;
+  
 
   // Initialisation du port série pour debug
   Serial.begin(115200);
@@ -72,6 +90,8 @@ void setup()
  
   // Texte blanc
   tft.fillScreen(ILI9341_BLACK);
+  tft.fillRect(0, 0, longueur, largeur, ILI9341_RED);
+  tft.fillRect(10,10,longueur-20,largeur-20, ILI9341_BLACK);
   snakeBodyX[0] = snakeheadx - L;
   snakeBodyX[1] = snakeheadx - 2*L;
   snakeBodyX[2] = snakeheadx - 3*L;
@@ -133,7 +153,7 @@ void loop()
   else if (deplacement == 3) snakeheady += L;  // bas
   else if (deplacement == 4) snakeheady -= L;  // haut
 
- if (collision()) {
+ if (collision()|| collisionAvecArene(snakeheadx, snakeheady, longueur, largeur, L)) {
   tft.fillScreen(ILI9341_RED);
   tft.setCursor(50, 120);
   tft.setTextColor(ILI9341_WHITE);
@@ -153,10 +173,10 @@ void loop()
   // Dessiner la tête (verte)
   tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_GREEN);
 
-  // Agrandir le serpent toutes les 10 secondes
+  // Agrandir le serpent toutes les 5 secondes
   static unsigned long lastGrow = 0;
-  if (millis() - lastGrow > 10000 && tailLength < MAX_TAIL) {
-    tailLength++;
+  if (millis() - lastGrow > 5000 ) {
+    tft.fillCircle(pommex,pommey,5,ILI9341_RED);
     lastGrow = millis();
   }
 

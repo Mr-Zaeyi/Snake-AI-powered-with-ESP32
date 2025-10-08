@@ -31,11 +31,43 @@
    int pommex;
    int pommey;
 
- void genererPomme(){
-   int minX=10;
-   int maxX= longueur-10-L;
-   
- }
+ void genererPomme() {
+  int minX = 10;
+  int maxX = longueur - 10 - L;
+  int minY = 10;
+  int maxY = largeur - 10 - L;
+
+  bool enCollision;
+
+  do {
+    // Coordonnées multiples de L, dans la zone noire (grille)
+    pommex = (rand() % ((maxX - minX) / L + 1)) * L + minX;
+    pommey = (rand() % ((maxY - minY) / L + 1)) * L + minY;
+
+    enCollision = false;
+
+    // Si la pomme est sur la tête
+    if (pommex == snakeheadx && pommey == snakeheady) {
+      enCollision = true;
+    }
+
+    // Si la pomme est sur un segment du corps
+    for (int i = 0; i < tailLength; i++) {
+      if (pommex == snakeBodyX[i] && pommey == snakeBodyY[i]) {
+        enCollision = true;
+        break;
+      }
+    }
+
+  } while (enCollision);
+
+  tft.fillRect(pommex,pommey,L,L, ILI9341_RED);
+}
+
+
+
+
+
 
 
 bool collision() {
@@ -47,8 +79,7 @@ bool collision() {
    return false;
 }
 bool collisionAvecArene(int x, int y, int longueur, int largeur, int L) {
-    // x et y sont la position de la tête (coin haut-gauche)
-    // L est la taille du carré (taille d'un segment)
+    
     
     // Vérifie si la tête est en dehors du rectangle noir (terrain de jeu)
     if (x < 10 || y < 10) return true;                      // Trop à gauche ou en haut
@@ -64,33 +95,24 @@ void setup()
 
   
 
-  // Initialisation du port série pour debug
+ 
   Serial.begin(115200);
   delay(200);
-  Serial.println("Démarrage test ILI9341...");
+
  
   // Initialisation de l'écran
   tft.begin();
  
   // Orientation de l'écran 
-  tft.setRotation(1);  // Paysage = 0 ; Portrait = 1 , Paysage inversé = 2 etc....important pour le dx et le dy !!!!
+  tft.setRotation(1);  // Paysage = 0 ; Portrait = 1 , Paysage inversé = 2 
  
-  // Effacer l'écran en noir
+ 
+  
+ 
+  
+ 
   tft.fillScreen(ILI9341_BLACK);
- 
-  Serial.println("Écran initialisé !");
- 
-  // Fond coloré
-  tft.fillScreen(ILI9341_BLUE);
-  delay(200);
- 
-  // Rectangle rouge
-  tft.fillRect(50, 50, 100, 80, ILI9341_RED);
-  delay(200);
- 
-  // Texte blanc
-  tft.fillScreen(ILI9341_BLACK);
-  tft.fillRect(0, 0, longueur, largeur, ILI9341_RED);
+  tft.fillRect(0, 0, longueur, largeur, ILI9341_BLUE);
   tft.fillRect(10,10,longueur-20,largeur-20, ILI9341_BLACK);
   snakeBodyX[0] = snakeheadx - L;
   snakeBodyX[1] = snakeheadx - 2*L;
@@ -106,6 +128,9 @@ void setup()
     tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_YELLOW); // Corps
   }
 
+  genererPomme();
+  
+
  
 
 
@@ -116,14 +141,37 @@ void setup()
 
 void loop()
 {
+   int deplacement;
+   // Game over si collision
+ if (collision()|| collisionAvecArene(snakeheadx, snakeheady, longueur, largeur, L)) {
+  tft.setCursor(50, 120);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(3);
+  tft.print("GAME OVER");
+  while (true) {
+    
+  }
+
+  }
+
+
   // Effacer ancien corps
   for (int i = 0; i < tailLength; i++) {
     tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_BLACK);
   }
   tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_BLACK); // Tête
+  //7 premiers déplacement choisis de façon à faire un test puis déplacement aléatoire
+  static int t= 0;
+  if (t <= 4) deplacement = 2;       
+  else if (t>4 && t<=7) deplacement = 4;  
+  else if (t>7) deplacement = (rand() % 4) + 1;
+  t++;
+  
+  
 
-  // Calcul direction aléatoire (1: droite, 2: gauche, 3: bas, 4: haut)
-  int deplacement = (rand() % 4) + 1;
+
+  
+  
 
   // Éviter de revenir sur le segment précédent
   if (tailLength > 0) {
@@ -146,39 +194,28 @@ void loop()
     snakeBodyX[0] = snakeheadx;
     snakeBodyY[0] = snakeheady;
   }
-
+  
   // Mise à jour de la tête
   if (deplacement == 1) snakeheadx += L;       // droite
   else if (deplacement == 2) snakeheadx -= L;  // gauche
   else if (deplacement == 3) snakeheady += L;  // bas
   else if (deplacement == 4) snakeheady -= L;  // haut
+ 
 
- if (collision()|| collisionAvecArene(snakeheadx, snakeheady, longueur, largeur, L)) {
-  tft.fillScreen(ILI9341_RED);
-  tft.setCursor(50, 120);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setTextSize(3);
-  tft.print("GAME OVER");
-  while (true) {
-    
-  }
-
-  }
-
-  // Dessiner le nouveau corps (jaune)
+  // Dessiner le nouveau corps 
   for (int i = 0; i < tailLength; i++) {
     tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_YELLOW);
   }
 
-  // Dessiner la tête (verte)
+  // Dessiner la tête 
   tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_GREEN);
 
-  // Agrandir le serpent toutes les 5 secondes
-  static unsigned long lastGrow = 0;
-  if (millis() - lastGrow > 5000 ) {
-    tft.fillCircle(pommex,pommey,5,ILI9341_RED);
-    lastGrow = millis();
-  }
+
+  //Agrandir le serpent quand il mange la pomme & faire réapparaitre une pomme
+  if (snakeheadx == pommex && snakeheady == pommey) {
+  tailLength++;
+  genererPomme();
+}
 
   delay(500);
 

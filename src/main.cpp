@@ -119,7 +119,8 @@ void setup()
   Serial.begin(115200);
   delay(200);
   Wire.begin();
-  while (!Serial); // Leonardo: wait for serial monitor
+  while (!Serial)
+    ; // Leonardo: wait for serial monitor
   Serial.println("\nI2C Scanner");
 
   // Initialisation de l'écran
@@ -129,24 +130,6 @@ void setup()
   tft.setRotation(1); // Paysage = 0 ; Portrait = 1 , Paysage inversé = 2
 
   tft.fillScreen(ILI9341_BLACK);
-  tft.fillRect(0, 0, longueur, largeur, ILI9341_BLUE);
-  tft.fillRect(10, 10, longueur - 20, largeur - 20, ILI9341_BLACK);
-  snakeBodyX[0] = snakeheadx - L;
-  snakeBodyX[1] = snakeheadx - 2 * L;
-  snakeBodyX[2] = snakeheadx - 3 * L;
-
-  snakeBodyY[0] = snakeheady;
-  snakeBodyY[1] = snakeheady;
-  snakeBodyY[2] = snakeheady;
-
-  tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_GREEN); // Tête
-
-  for (int i = 0; i < tailLength; i++)
-  {
-    tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_YELLOW); // Corps
-  }
-
-  genererPomme();
 
   Serial.println("Adafruit MPR121 Capacitive Touch sensor test");
 
@@ -162,42 +145,81 @@ void setup()
 }
 
 void loop()
-{ 
-  
+{
+
+  static int menu = 0;
   currtouched = cap.touched();
-  if (cap.filteredData(0)<=12)
+  while (menu == 0)
   {
-    deplacement=2;
-  }
-  else if (cap.filteredData(4)<=12)
-  {
-    deplacement=3;
-  }
-  else if (cap.filteredData(5)<=12)
-  {
-    deplacement=4;
-  }
-  else if (cap.filteredData(8)<=12)
-  {
-    deplacement=1;
-  }
-  
-  
-
-
-  
-  // Game over si collision
-  if (collision() || collisionAvecArene(snakeheadx, snakeheady, longueur, largeur, L))
-  {
-    tft.setCursor(50, 120);
+    tft.setCursor(10, 10);
     tft.setTextColor(ILI9341_WHITE);
     tft.setTextSize(3);
-    tft.print("GAME OVER");
-    while (true) {
+    tft.print("SNAKE");
+    tft.setCursor(10, 60);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setTextSize(3);
+    tft.print("0 : JOUER");
+    if (cap.filteredData(0) <= 10)
+    {
+      menu += 1;
+      tft.fillRect(0, 0, longueur, largeur, ILI9341_BLUE);
+      tft.fillRect(10, 10, longueur - 20, largeur - 20, ILI9341_BLACK);
+      snakeBodyX[0] = snakeheadx - L;
+      snakeBodyX[1] = snakeheadx - 2 * L;
+      snakeBodyX[2] = snakeheadx - 3 * L;
 
+      snakeBodyY[0] = snakeheady;
+      snakeBodyY[1] = snakeheady;
+      snakeBodyY[2] = snakeheady;
+
+      tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_GREEN); // Tête
+
+      for (int i = 0; i < tailLength; i++)
+      {
+        tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_YELLOW); // Corps
+      }
+
+      genererPomme();
     }
   }
+  static int debut=0;
+  while (debut==0)
+  {
+    tft.setCursor(50, 60);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setTextSize(1);
+    tft.print("PRESS 0 TO START");
+    if (cap.filteredData(0)<=10)
+    {
+      tft.setCursor(50, 60);
+      tft.setTextColor(ILI9341_BLACK);
+      tft.setTextSize(1);
+      tft.print("PRESS 0 TO START");
+      debut+=1;
+    }
+    
+  }
+  
 
+
+  if (cap.filteredData(0) <= 10)
+  {
+    deplacement = 2;
+  }
+  else if (cap.filteredData(4) <= 10)
+  {
+    deplacement = 3;
+  }
+  else if (cap.filteredData(5) <= 10)
+  {
+    deplacement = 4;
+  }
+  else if (cap.filteredData(8) <= 10)
+  {
+    deplacement = 1;
+  }
+
+ 
   // Effacer ancien corps
   for (int i = 0; i < tailLength; i++)
   {
@@ -221,9 +243,9 @@ void loop()
     int dy = snakeheady - snakeBodyY[0];
 
     if (dx == L && deplacement == 2)
-      deplacement = 1 ; // va pas à gauche
+      deplacement = 1; // va pas à gauche
     if (dx == -L && deplacement == 1)
-      deplacement = 2 ; // va pas à droite
+      deplacement = 2; // va pas à droite
     if (dy == L && deplacement == 4)
       deplacement = 3; // va pas en haut
     if (dy == -L && deplacement == 3)
@@ -268,6 +290,66 @@ void loop()
     tailLength++;
     genererPomme();
   }
+
+   // Game over si collision
+  if (collision() || collisionAvecArene(snakeheadx, snakeheady, longueur, largeur, L))
+  {
+    tft.setCursor(10, 20);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setTextSize(3);
+    tft.print("GAME OVER");
+    tft.setCursor(10, 60);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setTextSize(3);
+    tft.print("0: REJOUER");
+    tft.setCursor(10, 120);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setTextSize(3);
+    tft.print("1: MENU");
+    while (true)
+    {
+       if (cap.filteredData(0)<=10)
+    {
+      tft.fillScreen(ILI9341_BLACK);
+      tft.fillRect(0, 0, longueur, largeur, ILI9341_BLUE);
+      tft.fillRect(10, 10, longueur - 20, largeur - 20, ILI9341_BLACK);
+      snakeheadx = 160;
+      snakeheady = 120;
+      tailLength = 3;
+      snakeBodyX[0] = snakeheadx - L;
+      snakeBodyX[1] = snakeheadx - 2 * L;
+      snakeBodyX[2] = snakeheadx - 3 * L;
+
+      snakeBodyY[0] = snakeheady;
+      snakeBodyY[1] = snakeheady;
+      snakeBodyY[2] = snakeheady;
+
+      tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_GREEN); // Tête
+
+      for (int i = 0; i < tailLength; i++)
+      {
+        tft.fillRect(snakeBodyX[i], snakeBodyY[i], L, L, ILI9341_YELLOW); // Corps
+      }
+
+      genererPomme();
+      debut=0;
+      break;
+      
+    }
+      else if (cap.filteredData(1)<=10)
+      {
+        tft.fillScreen(ILI9341_BLACK);
+        menu=0;
+        debut=0;
+        snakeheadx = 160;
+       snakeheady = 120;
+       tailLength = 3;
+        break;
+      }
+      
+    }
+  }
+
   /*byte error, address;
   int nDevices;
 
@@ -310,7 +392,7 @@ void loop()
   for (uint8_t i = 0; i < 12; i++)
   {
     // it if *is* touched and *wasnt* touched before, alert!
-    if ((currtouched & _BV(i)) )
+    if ((currtouched & _BV(i)))
     {
       Serial.print(i);
       Serial.println(" touched");
@@ -327,7 +409,7 @@ void loop()
   lasttouched = currtouched;
 
   // comment out this line for detailed data from the sensor!
-  //return;
+  // return;
 
   // debugging info, what
   Serial.print("\t\t\t\t\t\t\t\t\t\t\t\t\t 0x");
@@ -349,5 +431,5 @@ void loop()
 
   // put a delay so it isn't overwhelming
 
-  delay(250);
+  delay(200);
 }

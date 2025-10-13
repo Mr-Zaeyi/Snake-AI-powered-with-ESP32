@@ -12,6 +12,13 @@
 #define TFT_CS PB6  // D10
 #define TFT_DC PC7  // D9
 #define TFT_RST PA9 // D8
+#ifndef _BV
+#define _BV(bit) (1 << (bit))
+#endif
+
+uint16_t lasttouched = 0;
+uint16_t currtouched = 0;
+
 // Création de l'objet écran
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
 // Création de l'objet clavier
@@ -67,6 +74,17 @@ void genererPomme()
   } while (enCollision);
 
   tft.fillRect(pommex, pommey, L, L, ILI9341_RED);
+  Serial.println("Adafruit MPR121 Capacitive Touch sensor test");
+
+  // Default address is 0x5A, if tied to 3.3V its 0x5B
+  // If tied to SDA its 0x5C and if SCL then 0x5D
+  if (!cap.begin(0x5A))
+  {
+    Serial.println("MPR121 not found, check wiring?");
+    while (1)
+      ;
+  }
+  Serial.println("MPR121 found!");
 }
 
 bool collision()
@@ -96,11 +114,11 @@ bool collisionAvecArene(int x, int y, int longueur, int largeur, int L)
 
 void setup()
 {
+
   Serial.begin(115200);
   delay(200);
   Wire.begin();
-  while (!Serial)
-    ; // Leonardo: wait for serial monitor
+  while (!Serial); // Leonardo: wait for serial monitor
   Serial.println("\nI2C Scanner");
 
   // Initialisation de l'écran
@@ -128,6 +146,18 @@ void setup()
   }
 
   genererPomme();
+
+  Serial.println("Adafruit MPR121 Capacitive Touch sensor test");
+
+  // Default address is 0x5A, if tied to 3.3V its 0x5B
+  // If tied to SDA its 0x5C and if SCL then 0x5D
+  if (!cap.begin(0x5A))
+  {
+    Serial.println("MPR121 not found, check wiring?");
+    while (1)
+      ;
+  }
+  Serial.println("MPR121 found!");
 }
 
 void loop()
@@ -216,7 +246,7 @@ void loop()
     tailLength++;
     genererPomme();
   }
-  byte error, address;
+  /*byte error, address;
   int nDevices;
 
   Serial.println("Scanning...");
@@ -251,7 +281,51 @@ void loop()
   if (nDevices == 0)
     Serial.println("No I2C devices found\n");
   else
-    Serial.println("done\n");
+    Serial.println("done\n");*/
+  // Get the currently touched pads
+  currtouched = cap.touched();
 
-  delay(500);
+  for (uint8_t i = 0; i < 12; i++)
+  {
+    // it if *is* touched and *wasnt* touched before, alert!
+    if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)))
+    {
+      Serial.print(i);
+      Serial.println(" touched");
+    }
+    // if it *was* touched and now *isnt*, alert!
+    if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)))
+    {
+      Serial.print(i);
+      Serial.println(" released");
+    }
+  }
+
+  // reset our state
+  lasttouched = currtouched;
+
+  // comment out this line for detailed data from the sensor!
+  // return;
+
+  // debugging info, what
+  Serial.print("\t\t\t\t\t\t\t\t\t\t\t\t\t 0x");
+  Serial.println(cap.touched(), HEX);
+  Serial.print("Filt: ");
+  for (uint8_t i = 0; i < 12; i++)
+  {
+    Serial.print(cap.filteredData(i));
+    Serial.print("\t");
+  }
+  Serial.println();
+  Serial.print("Base: ");
+  for (uint8_t i = 0; i < 12; i++)
+  {
+    Serial.print(cap.baselineData(i));
+    Serial.print("\t");
+  }
+  Serial.println();
+
+  // put a delay so it isn't overwhelming
+
+  delay(5000);
 }

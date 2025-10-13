@@ -37,6 +37,7 @@ int longueur = 280;
 int largeur = 200;
 int pommex;
 int pommey;
+int deplacement;
 
 void genererPomme()
 {
@@ -161,9 +162,30 @@ void setup()
 }
 
 void loop()
-{
+{ 
+  
+  currtouched = cap.touched();
+  if (cap.filteredData(0)<=12)
+  {
+    deplacement=2;
+  }
+  else if (cap.filteredData(4)<=12)
+  {
+    deplacement=3;
+  }
+  else if (cap.filteredData(5)<=12)
+  {
+    deplacement=4;
+  }
+  else if (cap.filteredData(8)<=12)
+  {
+    deplacement=1;
+  }
+  
+  
 
-  int deplacement;
+
+  
   // Game over si collision
   if (collision() || collisionAvecArene(snakeheadx, snakeheady, longueur, largeur, L))
   {
@@ -171,9 +193,9 @@ void loop()
     tft.setTextColor(ILI9341_WHITE);
     tft.setTextSize(3);
     tft.print("GAME OVER");
-    /*while (true) {
+    while (true) {
 
-    }*/
+    }
   }
 
   // Effacer ancien corps
@@ -183,14 +205,14 @@ void loop()
   }
   tft.fillRect(snakeheadx, snakeheady, L, L, ILI9341_BLACK); // Tête
   // 7 premiers déplacement choisis de façon à faire un test puis déplacement aléatoire
-  static int t = 0;
+  /*static int t = 0;
   if (t <= 4)
     deplacement = 2;
   else if (t > 4 && t <= 7)
     deplacement = 4;
   else if (t > 7)
     deplacement = (rand() % 4) + 1;
-  t++;
+  t++;*/
 
   // Éviter de revenir sur le segment précédent
   if (tailLength > 0)
@@ -199,13 +221,13 @@ void loop()
     int dy = snakeheady - snakeBodyY[0];
 
     if (dx == L && deplacement == 2)
-      deplacement = 1 + (rand() % 3); // va pas à gauche
+      deplacement = 1 ; // va pas à gauche
     if (dx == -L && deplacement == 1)
-      deplacement = 2 + (rand() % 3); // va pas à droite
+      deplacement = 2 ; // va pas à droite
     if (dy == L && deplacement == 4)
-      deplacement = 1 + (rand() % 3); // va pas en haut
+      deplacement = 3; // va pas en haut
     if (dy == -L && deplacement == 3)
-      deplacement = 1 + (rand() % 3); // va pas en bas
+      deplacement = 4; // va pas en bas
   }
 
   // Décaler les segments du corps
@@ -288,7 +310,7 @@ void loop()
   for (uint8_t i = 0; i < 12; i++)
   {
     // it if *is* touched and *wasnt* touched before, alert!
-    if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)))
+    if ((currtouched & _BV(i)) )
     {
       Serial.print(i);
       Serial.println(" touched");
@@ -305,7 +327,7 @@ void loop()
   lasttouched = currtouched;
 
   // comment out this line for detailed data from the sensor!
-  // return;
+  //return;
 
   // debugging info, what
   Serial.print("\t\t\t\t\t\t\t\t\t\t\t\t\t 0x");
@@ -327,5 +349,5 @@ void loop()
 
   // put a delay so it isn't overwhelming
 
-  delay(5000);
+  delay(250);
 }

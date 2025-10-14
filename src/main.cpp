@@ -2,9 +2,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 #include <SPI.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <Wire.h>
 #include <Adafruit_MPR121.h>
 

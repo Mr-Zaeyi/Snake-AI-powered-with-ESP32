@@ -42,9 +42,9 @@ Once the board is powered on, it creates its own Wi-Fi network:
 
 | SSID | Password |
 |------|-----------|
-| `Projet_IE3_Snake` | `Palantir03` |
+| `YourWI-FI_Name` | `YourPassword` |
 
-Connect to it and open **[`http://192.168.4.1`](http://192.168.4.1)** in your browser.
+Connect to it and open the link given in your browser.
 
 You’ll see:
 - 🧩 Game Mode  

@@ -1,0 +1,300 @@
+Snake Game - ESP32-C6 with Real-Time WiFi Dashboard
+
+A modern implementation of the classic Snake game on ESP32-C6 microcontroller, featuring an AI opponent using Manhattan distance pathfinding and a real-time web dashboard for game statistics monitoring.
+Afficher l_image
+
+📋 Table of Contents
+
+Features
+Hardware Requirements
+Software Architecture
+Installation
+Usage
+AI Algorithm
+Web Dashboard
+Technical Details
+Future Improvements
+Contributors
+License
+
+✨ Features
+
+🎮 Game Modes
+
+Solo Mode: Human player using capacitive touch keyboard (MPR121)
+AI Mode: Autonomous snake with Manhattan distance pathfinding algorithm
+Menu System: Touch-based navigation between game modes
+
+📡 Connectivity
+
+WiFi Access Point: ESP32-C6 creates its own network (Projet_IE3_Snake) - you can change the WI-FI name
+Web Server: Embedded HTTP server serving real-time statistics
+RESTful API: JSON endpoint for game data (/stats)
+Live Dashboard: Modern glassmorphism UI with auto-refresh
+
+⚡ Performance
+
+Non-blocking Architecture: Uses millis() instead of delay()
+State Machine: Clean state management (MENU, PLAYING_SOLO, PLAYING_IA, GAME_OVER)
+Optimized Memory: HTML stored in Flash (PROGMEM) to save RAM
+Concurrent Processing: Game loop and web server run simultaneously
+
+🔧 Hardware Requirements
+ComponentModelInterfacePinsMicrocontrollerESP32-C6 DevKit C1--DisplayAdafruit ILI9341 (240x320)SPICS:21, DC:19, RST:20, MOSI:23, MISO:22, SCK:18KeyboardAdafruit MPR121 (Capacitive)I2CSDA:5, SCL:4PowerUSB-C or Battery--
+
+Wiring Diagram
+ESP32-C6          ILI9341 Display
+   21  ------------ CS
+   19  ------------ DC
+   20  ------------ RST
+   23  ------------ MOSI
+   22  ------------ MISO
+   18  ------------ SCK
+  3.3V ------------ VCC
+  GND  ------------ GND
+
+ESP32-C6          MPR121 Keyboard
+    5  ------------ SDA
+    4  ------------ SCL
+  3.3V ------------ VIN
+  GND  ------------ GND
+🏗️ Software Architecture
+State Machine
+┌──────┐  Touch 0   ┌─────────────┐
+│ MENU │──────────→ │ PLAYING_SOLO│
+└──┬───┘            └──────┬──────┘
+   │                       │
+   │ Touch 4               │ Collision
+   │                       ↓
+   │                  ┌──────────┐
+   └─────────────────→│ GAME_OVER│
+                      └─────┬────┘
+                            │ Touch 8
+                            └──→ MENU
+Technology Stack
+
+Language: C++ (Arduino Framework)
+Platform: ESP-IDF / Arduino Core for ESP32
+
+Libraries:
+
+Adafruit_GFX - Graphics primitives
+Adafruit_ILI9341 - Display driver
+Adafruit_MPR121 - Capacitive touch sensor
+WiFi - Network connectivity
+WebServer - HTTP server
+
+
+
+📦 Installation
+Prerequisites
+
+Arduino IDE 2.x or PlatformIO
+ESP32 Board Support (esp32 by Espressif Systems)
+
+Arduino IDE Setup
+
+Install ESP32 Board
+
+File → Preferences → Additional Board Manager URLs
+Add: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+Tools → Board → Boards Manager → Search "ESP32" → Install
+
+
+Install Libraries
+
+Sketch → Include Library → Manage Libraries
+Install:
+
+Adafruit GFX Library
+Adafruit ILI9341
+Adafruit MPR121
+
+
+
+Configure Board
+
+Tools → Board → esp32-c6-devkitc-1
+Tools → Upload Speed → 115200
+Tools → USB CDC On Boot → Enabled
+
+
+
+Clone & Upload
+bashgit clone https://github.com/Mr-Zaeyi/snake-esp32-c6.git
+cd snake-esp32-c6
+# Open snake-esp32-c6.ino in Arduino IDE
+# Click Upload button
+PlatformIO Setup
+ini[env:esp32c6]
+platform = espressif32
+board = esp32-c6-devkitc-1
+framework = arduino
+lib_deps = 
+    adafruit/Adafruit GFX Library
+    adafruit/Adafruit ILI9341
+    adafruit/Adafruit MPR121
+monitor_speed = 115200
+🎮 Usage
+1. Power On
+Connect ESP32-C6 via USB or battery. Serial output will display:
+
+=== SNAKE ESP32-C6 with WiFi ===
+
+--- WiFi Settings ---
+Network: Projet_IE3_Snake
+Password: Palantir03
+IP Adress: 192.168.4.1
+Note: Connect to the WiFi network "Projet_IE3_Snake" before opening http://192.168.4.1 in your browser.
+
+
+2. Connect to WiFi
+
+SSID: Projet_IE3_Snake
+Password: Palantir03
+Open browser: http://192.168.4.1
+
+3. Controls
+Touch Pad   Action
+0           Move LEFT (Solo) / Select SOLO mode (Menu)
+4           Move DOWN (Solo) / Select AI mode (Menu)
+5           Move UP (Solo)
+8           Move RIGHT (Solo) / Return to menu (Game Over)
+
+
+4. Game Modes
+Solo Mode
+
+Control snake with touch keyboard
+Eat red apples to grow
+Avoid walls and your own body
+Speed: 200ms per move
+
+AI Mode
+
+Watch the AI play autonomously
+AI uses Manhattan distance algorithm
+Speed: 150ms per move (faster than human)
+
+🤖 AI Algorithm
+Manhattan Distance Pathfinding
+The AI calculates the optimal direction using a scoring system:
+cppint calculerDirectionIA() {
+    // 1. Calculate Manhattan distance to apple
+    int dx = appleX - snakeHeadX;
+    int dy = appleY - snakeHeadY;
+    
+    // 2. Score each direction
+    int scores[4] = {0, 0, 0, 0}; // Right, Left, Down, Up
+    
+    // 3. Priority: Move toward apple (+10 points)
+    if (dx > 0) scores[RIGHT] += 10;
+    if (dx < 0) scores[LEFT] += 10;
+    if (dy > 0) scores[DOWN] += 10;
+    if (dy < 0) scores[UP] += 10;
+    
+    // 4. Safety check: Avoid walls/body (+5 if safe, -100 if danger)
+    for (each direction) {
+        if (isSafe(newPosition)) scores[dir] += 5;
+        else scores[dir] = -100;
+    }
+    
+    // 5. Prevent 180° turn
+    if (wouldGoBackward(direction)) scores[dir] = -100;
+    
+    // 6. Return best direction
+    return directionWithHighestScore();
+}
+Algorithm Complexity
+
+Time: O(n) where n = snake length
+Space: O(1) constant memory
+Decision time: < 1ms on ESP32-C6 @ 160MHz
+
+🌐 Web Dashboard
+Features
+
+Real-time Updates: Stats refresh every 1 second
+Responsive Design: Works on mobile & desktop
+Modern UI: Glassmorphism effect with CSS3
+JSON API: /stats endpoint returns:
+
+json{
+  "score": 15,
+  "length": 18,
+  "mode": "SOLO",
+  "status": "alive"
+}
+API Endpoints
+EndpointMethodDescriptionResponse/GETMain dashboard HTMLtext/html/statsGETCurrent game statisticsapplication/json
+Screenshot
+┌─────────────────────────────────┐
+│   📊 PROGRESSION SCORE          │
+├─────────────────────────────────┤
+│   Mode: SOLO                    │
+├─────────────────────────────────┤
+│   ⚡ EN JEU                     │
+├─────────────────────────────────┤
+│   Score          length         │
+│     15              18          │
+└─────────────────────────────────┘
+🔬 Technical Details
+
+Memory Usage
+ComponentRAMFlashSnake body array800 bytes-Display framebuffer0 (Direct draw)-HTML page0 (PROGMEM)~3KBTotal~5KB~200KB
+Performance Metrics
+
+Frame Rate: ~60 FPS (display refresh)
+Game Tick: 150-200ms (configurable)
+Web Response: < 50ms
+WiFi Range: ~30m indoors
+
+Non-Blocking Architecture
+cppvoid loop() {
+    unsigned long now = millis();
+    
+    // 1. Handle web requests (non-blocking)
+    server.handleClient();
+    
+    // 2. Read keyboard input (immediate)
+    if (gameState == PLAYING_SOLO) {
+        readKeyboard();
+    }
+    
+    // 3. Game tick (timed, non-blocking)
+    if (now - lastMove >= moveInterval) {
+        lastMove = now;
+        moveSnake();
+        checkCollisions();
+    }
+}
+🚀 Future Improvements
+Planned Features
+
+ Hardware Interrupts: Use MPR121 IRQ pin for instant touch detection
+ DMA SPI: Faster display refresh using Direct Memory Access
+ FreeRTOS: Multi-core task scheduling (Game on Core 0, WiFi on Core 1)
+ BLE Control: Bluetooth Low Energy gamepad support
+ Leaderboard: Persistent high scores in SPIFFS/LittleFS
+ OTA Updates: Over-The-Air firmware updates
+ A Pathfinding*: Upgrade from Manhattan to A* algorithm
+ Multiplayer: Two snakes over WiFi mesh network
+
+Known Issues
+
+Debounce uses delay(300) (to be replaced with millis-based solution)
+AI can get trapped in corners (needs flood fill algorithm)
+No score persistence (resets on power cycle)
+
+
+📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+🙏 Acknowledgments
+
+Adafruit Industries for excellent hardware libraries
+Espressif Systems for ESP32-C6 platform
+Inspired by the classic Nokia Snake game (1997)
+
+
+⭐ Star this repo if you found it useful! ⭐

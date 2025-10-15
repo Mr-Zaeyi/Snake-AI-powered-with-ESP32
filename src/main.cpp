@@ -5,7 +5,6 @@
 #include <Wire.h>
 #include <Adafruit_MPR121.h>
 
-
 #define TFT_CS    21
 #define TFT_DC    19
 #define TFT_RST   20
@@ -14,7 +13,6 @@
 #define TFT_SCK   18
 #define SDA_PIN   5
 #define SCL_PIN   4
-
 
 // VARIABLES SNAKE
 

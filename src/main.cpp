@@ -478,7 +478,7 @@ void setup() {
         tft.setTextColor(ILI9341_RED);
         tft.setTextSize(2);
         tft.print("ERREUR CLAVIER");
-        while(1);
+        while(1); #Petite boucle infinie qui va bien
     }
 
     // Init WiFi en Point d'Accès
@@ -507,9 +507,9 @@ void setup() {
     Serial.println("Menu affiché - Prêt à jouer !");
 }
 
-// ============================================
+
 // LOOP
-// ============================================
+
 void loop() {
     unsigned long currentTime = millis();
     

@@ -7,9 +7,9 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
-// ============================================
-// PINS
-// ============================================
+
+// Pins (quand je mets const uint8_t ça bug quelquefois???)
+
 #define TFT_CS    21
 #define TFT_DC    19
 #define TFT_RST   20
@@ -19,16 +19,15 @@
 #define SDA_PIN   5
 #define SCL_PIN   4
 
-// ============================================
+
 // WIFI
-// ============================================
 const char* ssid = "Projet_IE3_Snake";
 const char* password = "Palantir03";
 WebServer server(80);
 
-// ============================================
+
 // VARIABLES SNAKE
-// ============================================
+
 int snakeheadx = 160;
 int snakeheady = 120;
 const int L = 10;
@@ -44,6 +43,8 @@ int score = 0;
 
 unsigned long lastMoveTime = 0;
 unsigned long moveInterval = 200;
+unsigned long lastButtonPress = 0; 
+const unsigned long DEBOUNCE_DELAY = 300;
 
 enum GameState {
   MENU,
@@ -52,20 +53,21 @@ enum GameState {
   GAME_OVER
 };
 GameState gameState = MENU;
+GameState previousGameMode = MENU;
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
 Adafruit_MPR121 cap = Adafruit_MPR121();
 
-// ============================================
-// PAGE HTML
-// ============================================
+
+// Page HTML
+
 const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Dashboard</title>
+    <title>Progression de notre Snake trop magnifique</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -149,7 +151,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 </head>
 <body>
     <div class="container">
-        <h1>🐍 SNAKE DASHBOARD</h1>
+        <h1>📊 PROGRESSION SCORE</h1>
         
         <div class="mode" id="mode">Mode: Chargement...</div>
         
@@ -204,9 +206,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
-// ============================================
-// HANDLERS WEB
-// ============================================
+
+// Handlers web
+
 void handleRoot() {
     server.send(200, "text/html", INDEX_HTML);
 }
@@ -230,9 +232,9 @@ void handleStats() {
     server.send(200, "application/json", json);
 }
 
-// ============================================
-// FONCTIONS SNAKE
-// ============================================
+
+// Fonctions
+
 void reinitJeu() {
     snakeheadx = 160;
     snakeheady = 120;
@@ -451,15 +453,19 @@ void afficherGameOver() {
     tft.print("Score: ");
     tft.print(score);
 
-    tft.setCursor(20, 160);
-    tft.setTextColor(ILI9341_YELLOW);
+    tft.setCursor(20, 150);
+    tft.setTextColor(ILI9341_GREEN);
     tft.setTextSize(1);
-    tft.print("[8] Retour au menu");
+    tft.print("[0] Rejouer");
+    
+    tft.setCursor(20, 170);
+    tft.setTextColor(ILI9341_YELLOW);
+    tft.print("[8] Menu");
 }
 
-// ============================================
+
 // SETUP
-// ============================================
+
 void setup() {
     Serial.begin(115200);
     Serial.println("\n=== SNAKE ESP32-C6 avec WiFi ===");
@@ -478,14 +484,13 @@ void setup() {
         tft.setTextColor(ILI9341_RED);
         tft.setTextSize(2);
         tft.print("ERREUR CLAVIER");
-        while(1); #Petite boucle infinie qui va bien
+        while(1);
     }
 
     // Init WiFi en Point d'Accès
     Serial.println("\n--- Configuration WiFi ---");
     WiFi.mode(WIFI_AP);
     WiFi.softAP(ssid, password);
-    delay(100);
 
     IPAddress IP = WiFi.softAPIP();
     Serial.print("Réseau WiFi: ");
@@ -513,7 +518,7 @@ void setup() {
 void loop() {
     unsigned long currentTime = millis();
     
-    // Traiter requêtes web (NON-BLOQUANT)
+    // Traiter requêtes web
     server.handleClient();
 
     if (gameState == MENU) {
@@ -523,7 +528,7 @@ void loop() {
             moveInterval = 200;
             reinitJeu();
             genererPomme();
-            delay(300);
+            previousGameMode = PLAYING_SOLO;
         }
         else if (cap.filteredData(4) <= 12) {
             Serial.println("Mode IA sélectionné");
@@ -531,7 +536,7 @@ void loop() {
             moveInterval = 150;
             reinitJeu();
             genererPomme();
-            delay(300);
+            previousGameMode = PLAYING_IA;
         }
         return;
     }
@@ -541,7 +546,12 @@ void loop() {
             Serial.println("Retour au menu");
             gameState = MENU;
             afficherMenu();
-            delay(300);
+        }
+        else if (cap.filteredData(0) <= 12) {
+            Serial.println("Rejouer en mode précédent");
+            gameState = previousGameMode;
+            reinitJeu();
+            genererPomme();
         }
         return;
     }
